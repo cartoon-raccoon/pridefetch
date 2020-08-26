@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+
+import argparse
+import distro
+import random
+from getpass import getuser
+from socket import gethostname
+from time import strftime
+from time import gmtime
+from subprocess import run
+
+# Define a dictionary of all the flags and their colors
+# Each color is the color for an individual row in the flag
+flags = {
+    'straight': [0, 255, 0, 255, 0],
+    'gay': [196, 208, 226, 28, 20, 90],
+    'bisexual': [198, 198, 97, 25, 25],
+    'lesbian': [202, 209, 255, 255, 168, 161],
+    'pansexual': [198, 198, 220, 220, 39, 39],
+    'trans': [81, 211, 255, 211, 81],
+    'nonbinary': [226, 226, 255, 255, 98, 98, 237, 237],
+    'demiboy': [244, 249, 117, 255, 117, 249, 244],
+    'demigirl': [244, 249, 218, 255, 218, 249, 244],
+    'genderfluid': [211, 255, 128, 0, 63],
+    'aromantic': [71, 149, 255, 249, 0],
+    'agender': [0, 251, 255, 149, 255, 251, 0],
+    'asexual': [0, 0, 242, 242, 255, 255, 54, 54],
+    'graysexual': [54, 242, 255, 242, 54],
+}
+
+def color256(col, bg_fg):
+    # Hacky alias around manually typing out escape codes every time 
+    return f'\033[{48 if bg_fg == "bg" else 38};5;{col}m'
+
+def draw_info(flag_name):
+    box = ' '
+    width = 20
+
+    flag = flags[flag_name]
+    curr_row = 0
+
+    # Store the output of uname -srm
+    uname_info = run(['uname', '-srm'], capture_output=True)
+    uname_info = uname_info.stdout.decode().strip()
+
+    # Make sure that the row color is different to the color of the hostname
+    row_color = color256(flag[1] if flag[0] != flag[1] else flag[2], "fg")
+
+    reset = '\033[0m\033[39m'
+
+    print()
+    for row in flag:
+        # Alternate displaying the information based on the current row
+        if curr_row == 0:
+            color = color256(flag[curr_row], "fg")
+
+            user = getuser()
+            host = gethostname()
+            row_info = f'{color}\033[1m{user}@{host}{reset}'
+        elif curr_row == 1:
+            distribution = distro.linux_distribution()
+            row_info = f'{row_color}os      {reset}{distribution[0] or "N/A"}'
+        elif curr_row == 2:
+            arch = uname_info.split(' ')[2]
+            row_info = f'{row_color}arch    {reset}{arch}'
+        elif curr_row == 3:
+            kernel = uname_info.split(' ')[1]
+            row_info = f'{row_color}kern    {reset}{kernel}'
+        elif curr_row == 4:
+            uptime = run(['cat', '/proc/uptime'], capture_output=True)
+            (total_secs, total_idle_secs) = uptime.stdout.decode().strip().split(' ')
+
+            total_time = strftime('%dd, %Hh, %Mm', gmtime(float(total_secs)))
+            row_info = f'{row_color}uptime  {reset}{total_time}'
+        else:
+            row_info = ''
+        
+        if row != 'P':
+            print(f' {color256(row, "bg")}{box * width}\033[49m {row_info}')
+        else:
+            # Print just the info, along with the padding for the box
+            print(f' {box * width}\033[49m {row_info}')
+            
+        curr_row += 1
+
+    print()
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--flag',     help='Displays the chosen FLAG')
+    parser.add_argument('-c', '--choose',   help='Choose a flag at random from this list')
+    parser.add_argument('-l', '--list',     action='store_true', help='Lists all the flags')
+
+    args = parser.parse_args()
+
+    if args.flag:
+        draw_info(args.flag)
+    if args.choose:
+        # Choose a flag at random from a list of comma-seperated flags
+        flag_choices = args.choose.split(',')
+        draw_info(random.choice(flag_choices))
+    if args.list:
+        # List out all the available flags
+        print('Available flags:')
+        print(', '.join(flags))
+    
+
+
+if __name__ == '__main__':
+    main()
