@@ -67,11 +67,10 @@ def draw_info(flag_name):
             kernel = uname_info.split(' ')[1]
             row_info = f'{row_color}kern    {reset}{kernel}'
         elif curr_row == 4:
-            uptime = run(['cat', '/proc/uptime'], capture_output=True)
-            (total_secs, total_idle_secs) = uptime.stdout.decode().strip().split(' ')
+            uptime = run(['uptime'], capture_output=True)
+            time = uptime.stdout.decode().split(" ")[1]
 
-            total_time = strftime('%dd, %Hh, %Mm', gmtime(float(total_secs)))
-            row_info = f'{row_color}uptime  {reset}{total_time}'
+            row_info = f'{row_color}uptime  {reset}{time}'
         else:
             row_info = ''
         
