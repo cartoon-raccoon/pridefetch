@@ -33,6 +33,10 @@ def color256(col, bg_fg):
     return f'\033[{48 if bg_fg == "bg" else 38};5;{col}m'
 
 def draw_info(flag_name):
+    if not flag_name in flags:
+        print("Flag not found")
+        return
+
     box = ' '
     width = 20
 
@@ -94,10 +98,12 @@ def main():
 
     if args.flag:
         draw_info(args.flag)
+
     if args.choose:
         # Choose a flag at random from a list of comma-seperated flags
         flag_choices = args.choose.split(',')
         draw_info(random.choice(flag_choices))
+
     if args.list:
         # List out all the available flags
         print('Available flags:')
